@@ -64,17 +64,30 @@ namespace sio
         virtual ~client_impl_base() {}
 
         // listeners and event bindings. (see SYNTHESIS_SETTER below)
-        virtual void set_open_listener(client::con_listener const&)=0;
-        virtual void set_fail_listener(client::con_listener const&)=0;
-        virtual void set_reconnect_listener(client::reconnect_listener const&)=0;
-        virtual void set_reconnecting_listener(client::con_listener const&)=0;
-        virtual void set_close_listener(client::close_listener const&)=0;
-        virtual void set_socket_open_listener(client::socket_listener const&)=0;
-        virtual void set_socket_close_listener(client::socket_listener const&)=0;
+        virtual void set_open_listener(client::con_listener const& l) { m_open_listener = l; }
+        virtual void set_fail_listener(client::con_listener const& l) { m_fail_listener = l; }
+        virtual void set_reconnect_listener(client::reconnect_listener const& l) { m_reconnect_listener = l; }
+        virtual void set_reconnecting_listener(client::con_listener const& l) { m_reconnecting_listener = l; }
+        virtual void set_close_listener(client::close_listener const& l) { m_close_listener = l; }
+        virtual void set_socket_open_listener(client::socket_listener const& l) { m_socket_open_listener = l; }
+        virtual void set_socket_close_listener(client::socket_listener const& l) { m_socket_close_listener = l; }
 
         // used by sio::client
-        virtual void clear_con_listeners()=0;
-        virtual void clear_socket_listeners()=0;
+        void clear_con_listeners()
+        {
+            m_open_listener = nullptr;
+            m_close_listener = nullptr;
+            m_fail_listener = nullptr;
+            m_reconnect_listener = nullptr;
+            m_reconnecting_listener = nullptr;
+        }
+
+        void clear_socket_listeners()
+        {
+            m_socket_open_listener = nullptr;
+            m_socket_close_listener = nullptr;
+        }
+
         virtual void connect(const std::string& uri, const std::map<std::string, std::string>& queryString,
                              const std::map<std::string, std::string>& httpExtraHeaders)=0;
         virtual sio::socket::ptr const& socket(const std::string& nsp)=0;
@@ -105,6 +118,15 @@ namespace sio
         inline socket_void_fn socket_on_close() { return &sio::socket::on_close; }
         inline socket_void_fn socket_on_disconnect() { return &sio::socket::on_disconnect; }
         inline socket_void_fn socket_on_open() { return &sio::socket::on_open; }
+
+        client::con_listener m_open_listener;
+        client::con_listener m_fail_listener;
+        client::con_listener m_reconnecting_listener;
+        client::reconnect_listener m_reconnect_listener;
+        client::close_listener m_close_listener;
+
+        client::socket_listener m_socket_open_listener;
+        client::socket_listener m_socket_close_listener;
     };
 
     template<typename client_type>
@@ -117,42 +139,6 @@ namespace sio
 
         ~client_impl();
         
-        //set listeners and event bindings.
-#define SYNTHESIS_SETTER(__TYPE__,__FIELD__) \
-    void set_##__FIELD__(__TYPE__ const& l) \
-        { m_##__FIELD__ = l;}
-        
-        SYNTHESIS_SETTER(client::con_listener,open_listener)
-        
-        SYNTHESIS_SETTER(client::con_listener,fail_listener)
-
-        SYNTHESIS_SETTER(client::reconnect_listener,reconnect_listener)
-
-        SYNTHESIS_SETTER(client::con_listener,reconnecting_listener)
-        
-        SYNTHESIS_SETTER(client::close_listener,close_listener)
-        
-        SYNTHESIS_SETTER(client::socket_listener,socket_open_listener)
-        
-        SYNTHESIS_SETTER(client::socket_listener,socket_close_listener)
-        
-#undef SYNTHESIS_SETTER
-        
-        
-        void clear_con_listeners()
-        {
-            m_open_listener = nullptr;
-            m_close_listener = nullptr;
-            m_fail_listener = nullptr;
-            m_reconnect_listener = nullptr;
-            m_reconnecting_listener = nullptr;
-        }
-        
-        void clear_socket_listeners()
-        {
-            m_socket_open_listener = nullptr;
-            m_socket_close_listener = nullptr;
-        }
         
         // Client Functions - such as send, etc.
         void connect(const std::string& uri, const std::map<std::string, std::string>& queryString,
@@ -255,25 +241,15 @@ namespace sio
         
         con_state m_con_state;
         
-        client::con_listener m_open_listener;
-        client::con_listener m_fail_listener;
-        client::con_listener m_reconnecting_listener;
-        client::reconnect_listener m_reconnect_listener;
-        client::close_listener m_close_listener;
-        
-        client::socket_listener m_socket_open_listener;
-        client::socket_listener m_socket_close_listener;
         
         std::map<const std::string,socket::ptr> m_sockets;
         
         std::mutex m_socket_mutex;
 
         unsigned m_reconn_delay;
-
         unsigned m_reconn_delay_max;
 
         unsigned m_reconn_attempts;
-
         unsigned m_reconn_made;
         
         friend class sio::client;

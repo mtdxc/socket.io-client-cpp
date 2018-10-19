@@ -12,7 +12,7 @@ namespace sio
         const std::string& get_nsp() const;
         
         const std::string& get_name() const;
-        
+        // return first message in get_messages
         const message::ptr& get_message() const;
 
         const message::list& get_messages() const;
@@ -57,17 +57,13 @@ namespace sio
         ~socket();
         
         void on(std::string const& event_name,event_listener const& func);
-        
-        void on(std::string const& event_name,event_listener_aux const& func);
-        
+        void on(std::string const& event_name,event_listener_aux const& func);        
         void off(std::string const& event_name);
-        
         void off_all();
         
         void close();
         
         void on_error(error_listener const& l);
-        
         void off_error();
 
         void emit(std::string const& name, message::list const& msglist = nullptr, std::function<void (message::list const&)> const& ack = nullptr);
@@ -78,15 +74,11 @@ namespace sio
         socket(client_impl_base*,std::string const&);
 
         void on_connected();
-        
         void on_close();
-        
         void on_open();
-        
         void on_disconnect();
         
-        void on_message_packet(packet const& p);
-        
+        void on_message_packet(packet const& p);        
         friend class client_impl_base;
         
     private:

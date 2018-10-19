@@ -26,7 +26,7 @@ namespace sio
         typedef std::function<void(void)> con_listener;
         
         typedef std::function<void(close_reason const& reason)> close_listener;
-
+        // num_reconnect, delay
         typedef std::function<void(unsigned, unsigned)> reconnect_listener;
         
         typedef std::function<void(std::string const& nsp)> socket_listener;
@@ -47,21 +47,16 @@ namespace sio
         
         //set listeners and event bindings.
         void set_open_listener(con_listener const& l);
-        
         void set_fail_listener(con_listener const& l);
         
         void set_reconnecting_listener(con_listener const& l);
-
         void set_reconnect_listener(reconnect_listener const& l);
 
         void set_close_listener(close_listener const& l);
-        
-        void set_socket_open_listener(socket_listener const& l);
-        
-        void set_socket_close_listener(socket_listener const& l);
-        
         void clear_con_listeners();
-        
+
+        void set_socket_open_listener(socket_listener const& l);
+        void set_socket_close_listener(socket_listener const& l);
         void clear_socket_listeners();
         
         // Client Functions - such as send, etc.

@@ -69,7 +69,6 @@ namespace sio
             m_ack_message = std::move(ack_message);
     }
     
-    inline
     event::event(std::string const& nsp,std::string const& name,message::list&& messages,bool need_ack):
         m_nsp(nsp),
         m_name(name),
@@ -78,7 +77,6 @@ namespace sio
     {
     }
 
-    inline
     event::event(std::string const& nsp,std::string const& name,message::list const& messages,bool need_ack):
         m_nsp(nsp),
         m_name(name),

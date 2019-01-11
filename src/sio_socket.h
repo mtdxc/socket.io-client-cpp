@@ -22,11 +22,11 @@ namespace sio
         void put_ack_message(message::list const& ack_message);
         
         message::list const& get_ack_message() const;
-        
-    protected:
+
+
         event(std::string const& nsp,std::string const& name,message::list const& messages,bool need_ack);
         event(std::string const& nsp,std::string const& name,message::list&& messages,bool need_ack);
-
+    protected:
         message::list& get_ack_message_impl();
         
     private:

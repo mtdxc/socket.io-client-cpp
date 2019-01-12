@@ -6,6 +6,8 @@
 #include <stdio.h>
 #ifdef WIN32
 #include <objbase.h>
+#pragma comment(lib, "Ole32.lib")
+#define snprintf _snprintf
 #else
 #include <uuid/uuid.h>
 typedef struct _GUID
@@ -31,11 +33,7 @@ namespace XGUID
   std::string GuidToString(const GUID &guid)
   {
     char buf[64] = { 0 };
-#ifdef __GNUC__
     snprintf(
-#else // MSVC
-    _snprintf_s(
-#endif
       buf,
       sizeof(buf),
       "{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}",

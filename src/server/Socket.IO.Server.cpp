@@ -5,7 +5,7 @@
 int main()
 {
 
-	WebSocketServer ws(10000);
+	WebSocketServer ws(10000, false);
 	ws.Start();
   return 0;
 }

@@ -8,43 +8,64 @@ using websocketpp::lib::placeholders::_2;
 class WebSocketServer
 {
 	int listenPortNumber;
-	WsServer server;
+	server_type_no_tls server;
 
 	std::atomic_int numberOfClients;
-	std::map<WsServer::connection_ptr, SocketIOClientHandler*> clients;
-
-	void OnWebSocketConnectionClose(WsServer *server, websocketpp::connection_hdl hdl) {
-		std::cout << "WsServer WebSocket Connection Closed Handle : "  << hdl.lock().get() << std::endl;
-		WsServer::connection_ptr connection =server->get_con_from_hdl(hdl);
-		clients.erase(connection);
+#if SIO_TLS
+	server_type_tls server_tls;
+	std::map<void*, client_handler*> clients;
+#endif
+	template<typename server_type>
+	void OnWebSocketConnectionClose(server_type *server, websocketpp::connection_hdl hdl) {
+		void* p = hdl.lock().get();
+		std::cout << "WsServer WebSocket Connection Closed Handle : "  << p << std::endl;
+		server_type::connection_ptr connection =server->get_con_from_hdl(hdl);
+		clients.erase(p);
 		 std::cout << "Number of Clients : " << clients.size() << std::endl;
 	}
-
-	void OnWebSocketMessage(WsServer *server, websocketpp::connection_hdl hdl, message_ptr msg) {
-		std::cout << "WsServer OnWebSocketMessage called with hdl: " << hdl.lock().get()
-			<< " and message: " << msg->get_payload()
-			<< std::endl;
+	template<typename server_type>
+	void OnWebSocketMessage(server_type *server, websocketpp::connection_hdl hdl, typename server_type::message_ptr msg) {
+		void* p = hdl.lock().get();
+		std::cout << "WsServer OnWebSocketMessage called with hdl: " << p
+			<< " message: " << msg->get_payload() << std::endl;
+		if (clients.count(p)) {
+			clients[p]->OnMessage(hdl, msg->get_payload());
+		}
 	}
 
-
-	void OnWebSocketConnectionOpen(WsServer *server, websocketpp::connection_hdl hdl) {
-		std::cout << "WsServer OnWebSocketConnectionOpen New Connection Handle : " << hdl.lock().get() << std::endl;
-		auto client = new SocketIOClientHandler(numberOfClients++,server, hdl);
-		WsServer::connection_ptr connection =server->get_con_from_hdl(hdl);
-		clients[connection] = client;
-		 std::cout << "Number of Clients : " << clients.size() << std::endl;
+	template<typename server_type>
+	void OnWebSocketConnectionOpen(server_type *server, websocketpp::connection_hdl hdl) {
+		void* p = hdl.lock().get();
+		std::cout << "WsServer OnWebSocketConnectionOpen New Connection Handle : " << p << std::endl;
+		auto client = new SocketIOClientHandler<server_type>(numberOfClients++,server, hdl);
+		server_type::connection_ptr connection =server->get_con_from_hdl(hdl);
+		clients[p] = client;
+		std::cout << "Number of Clients : " << clients.size() << std::endl;
 	}
-
 
 public:
 
-	WebSocketServer(int listenPort):listenPortNumber(listenPort)
+	WebSocketServer(int listenPort, bool ssl):listenPortNumber(listenPort)
 	{
-		server.clear_access_channels(websocketpp::log::alevel::all);
-		server.clear_error_channels(websocketpp::log::alevel::all);
-		server.set_message_handler(websocketpp::lib::bind(&WebSocketServer::OnWebSocketMessage,this, &server, ::_1, ::_2));
-		server.set_open_handler(websocketpp::lib::bind(&WebSocketServer::OnWebSocketConnectionOpen, this, &server, ::_1));
-		server.set_close_handler(websocketpp::lib::bind(&WebSocketServer::OnWebSocketConnectionClose, this, &server, ::_1));
+		if (ssl) {
+#if SIO_TLS
+			server_tls.clear_access_channels(websocketpp::log::alevel::all);
+			server_tls.clear_error_channels(websocketpp::log::alevel::all);
+			server_tls.set_message_handler(websocketpp::lib::bind(&WebSocketServer::OnWebSocketMessage<server_type_tls>, this, &server_tls, ::_1, ::_2));
+			server_tls.set_open_handler(websocketpp::lib::bind(&WebSocketServer::OnWebSocketConnectionOpen<server_type_tls>, this, &server_tls, ::_1));
+			server_tls.set_close_handler(websocketpp::lib::bind(&WebSocketServer::OnWebSocketConnectionClose<server_type_tls>, this, &server_tls, ::_1));
+#else
+			 return;
+#endif
+		}
+		else {
+			server.clear_access_channels(websocketpp::log::alevel::all);
+			server.clear_error_channels(websocketpp::log::alevel::all);
+
+			server.set_message_handler(websocketpp::lib::bind(&WebSocketServer::OnWebSocketMessage<server_type_no_tls>, this, &server, ::_1, ::_2));
+			server.set_open_handler(websocketpp::lib::bind(&WebSocketServer::OnWebSocketConnectionOpen<server_type_no_tls>, this, &server, ::_1));
+			server.set_close_handler(websocketpp::lib::bind(&WebSocketServer::OnWebSocketConnectionClose<server_type_no_tls>, this, &server, ::_1));
+		}
 	}
 
 	~WebSocketServer()

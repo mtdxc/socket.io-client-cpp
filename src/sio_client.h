@@ -13,8 +13,8 @@
 
 namespace sio
 {
-    class client_impl_base;
-    
+    class client_impl;
+
     class client {
     public:
         enum close_reason
@@ -61,18 +61,13 @@ namespace sio
         
         // Client Functions - such as send, etc.
         void connect();
-
         void connect(const std::string& uri);
-
         void connect(const std::string& uri, const std::map<std::string,std::string>& query);
-
         void connect(const std::string& uri, const std::map<std::string,std::string>& query,
                      const std::map<std::string,std::string>& http_extra_headers);
 
         void set_reconnect_attempts(int attempts);
-
         void set_reconnect_delay(unsigned millis);
-
         void set_reconnect_delay_max(unsigned millis);
         
         sio::socket::ptr const& socket(const std::string& nsp = "");
@@ -91,7 +86,7 @@ namespace sio
         client(client const&){}
         void operator=(client const&){}
         
-        client_impl_base* m_impl;
+        client_impl* m_impl;
     };
     
 }

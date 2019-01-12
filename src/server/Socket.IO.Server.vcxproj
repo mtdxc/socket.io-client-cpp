@@ -152,17 +152,20 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\internal\sio_handler.h" />
     <ClInclude Include="..\internal\sio_packet.h" />
     <ClInclude Include="..\sio_message.h" />
     <ClInclude Include="..\sio_socket.h" />
     <ClInclude Include="guid.h" />
-    <ClInclude Include="SocketIOClientHandler.h" />
-    <ClInclude Include="WebSocketServer.h" />
+    <ClInclude Include="sio_server_impl.h" />
+    <ClInclude Include="sio_server.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\internal\sio_handler.cpp" />
     <ClCompile Include="..\internal\sio_packet.cpp" />
     <ClCompile Include="..\sio_socket.cpp" />
-    <ClCompile Include="Socket.IO.Server.cpp" />
+    <ClCompile Include="sio_server_impl.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

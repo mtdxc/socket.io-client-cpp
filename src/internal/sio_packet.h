@@ -86,7 +86,6 @@ namespace sio
         typedef  function<void (packet const&)> decode_callback_function;
         
         void set_decode_callback(decode_callback_function const& decode_callback);
-
         void set_encode_callback(encode_callback_function const& encode_callback);
         
         void encode(packet& pack,encode_callback_function const& override_encode_callback = encode_callback_function()) const;

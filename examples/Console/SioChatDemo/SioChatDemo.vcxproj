@@ -14,6 +14,7 @@
     <ProjectGuid>{3503FCEB-2C8E-441A-A57C-B9DEE9171CF4}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>SioChatDemo</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -83,6 +84,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\internal\sio_client_impl.h" />
+    <ClInclude Include="..\..\..\src\internal\sio_handler.h" />
     <ClInclude Include="..\..\..\src\internal\sio_packet.h" />
     <ClInclude Include="..\..\..\src\sio_client.h" />
     <ClInclude Include="..\..\..\src\sio_message.h" />
@@ -90,6 +92,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\internal\sio_client_impl.cpp" />
+    <ClCompile Include="..\..\..\src\internal\sio_handler.cpp" />
     <ClCompile Include="..\..\..\src\internal\sio_packet.cpp" />
     <ClCompile Include="..\..\..\src\sio_client.cpp" />
     <ClCompile Include="..\..\..\src\sio_socket.cpp" />

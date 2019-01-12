@@ -13,22 +13,13 @@ using std::stringstream;
 namespace sio
 {
     client::client():
-        m_impl(new client_impl<client_type_no_tls>())
+        m_impl(new client_impl())
     {
     }
 
     client::client(const std::string& uri)
     {
-        if(!client_impl_base::is_tls(uri))
-        {
-            m_impl = new client_impl<client_type_no_tls>(uri);
-        }
-#if SIO_TLS
-        else
-        {
-            m_impl = new client_impl<client_type_tls>(uri);
-        }
-#endif
+        m_impl = new client_impl(uri);
     }
 
     client::~client()

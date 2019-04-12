@@ -1,6 +1,6 @@
 #pragma once
 #include <functional>
-#include "../sio_socket.h"
+#include "sio_socket.h"
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>

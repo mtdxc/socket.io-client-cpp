@@ -1,9 +1,8 @@
 
 
-#include "sio_server.h"
-#include "../internal/sio_packet.h"
-#include "../internal/sio_handler.h"
-#include "../sio_socket.h"
+#include "../sio_server.h"
+#include "sio_packet.h"
+#include "sio_handler.h"
 
 using websocketpp::lib::bind;
 using websocketpp::lib::placeholders::_1;

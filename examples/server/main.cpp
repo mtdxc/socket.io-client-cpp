@@ -1,7 +1,7 @@
 // Socket.IO.Server.cpp : Defines the entry point for the console application.
 //
+#include "../../src/sio_server.h"
 
-#include "sio_server.h"
 int main()
 {
 	sio::server ws(false);

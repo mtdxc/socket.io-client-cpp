@@ -98,6 +98,31 @@ namespace sio
         return m_nsp;
     }
 
+    int socket::SetUserData(const char* key, const char* value) {
+        int r = m_user_data.count(key);
+        if (value) {
+            m_user_data[key] = value;
+        }
+        else if (r) {
+            m_user_data.erase(key);
+        }
+        return r;
+    }
+
+
+    const char* socket::GetUserData(const char* key) {
+        const char* ret = NULL;
+        if (m_user_data.count(key))
+            ret = m_user_data[key].c_str();
+        return ret;
+    }
+
+    int socket::ClearUserData() {
+        int r = m_user_data.size();
+        m_user_data.clear();
+        return r;
+    }
+
     void socket::on(std::string const& event_name, event_listener_aux const& func)
     {
         this->on(event_name, event_adapter::do_adapt(func));

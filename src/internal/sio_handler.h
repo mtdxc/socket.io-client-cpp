@@ -7,6 +7,7 @@
 namespace sio
 {
 	struct handler {
+		typedef std::map<const std::string, socket::ptr> SocketMap;
 		enum con_state
 		{
 			con_opening,
@@ -16,20 +17,8 @@ namespace sio
 		};
 		handler();
 
-		virtual void set_socket_open_listener(client::socket_listener const& l) { m_socket_open_listener = l; }
-		virtual void set_socket_close_listener(client::socket_listener const& l) { m_socket_close_listener = l; }
-		void on_socket_closed(std::string const& nsp) {
-			if (m_socket_close_listener) m_socket_close_listener(nsp);
-		}
-		void on_socket_opened(std::string const& nsp) {
-			if (m_socket_open_listener) m_socket_open_listener(nsp);
-		}
-		void clear_socket_listeners()
-		{
-			m_socket_open_listener = nullptr;
-			m_socket_close_listener = nullptr;
-		}
-
+		virtual void on_socket_opened(std::string const& nsp) {}
+		virtual void on_socket_closed(std::string const& nsp) {}
 		bool opened() const { return m_con_state == con_opened; }
 		virtual void close() = 0;
 
@@ -38,10 +27,12 @@ namespace sio
 		void log(const char* fmt, ...);
 		virtual void on_log(const char* line) = 0;
 
+		// network recved data
 		void on_recv(bool bin, const std::string& msg);
 		virtual void on_packet(packet const& pack);
 		// used by sio::socket
 		void send(packet& p);
+		// send to network
 		virtual void on_send(bool bin, shared_ptr<const string> const& payload) = 0;
 
 		virtual asio::io_service& get_io_service() = 0;
@@ -49,6 +40,9 @@ namespace sio
 		static bool is_tls(const std::string& uri);
 
 		void remove_socket(std::string const& nsp);
+		virtual socket::ptr create_socket(const std::string& nsp);
+		socket::ptr const& socket(string const& nsp);
+		// const SocketMap& sockets() const { return m_sockets; }
 	protected:
 		socket::ptr get_socket_locked(string const& nsp);
 
@@ -58,14 +52,14 @@ namespace sio
 		inline socket_void_fn socket_on_open() { return &sio::socket::on_open; }
 		void sockets_invoke_void(void (sio::socket::*fn)(void));
 
-		client::socket_listener m_socket_open_listener;
-		client::socket_listener m_socket_close_listener;
-
-		std::map<const std::string, socket::ptr> m_sockets;
+		// nsp->socket::ptr
+		SocketMap m_sockets;
 		std::mutex m_socket_mutex;
 
+		// for packet encode
 		packet_manager m_packet_mgr;
 		con_state m_con_state;
+		// session id for server
 		std::string m_sid;
 	};
 }

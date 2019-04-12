@@ -70,6 +70,7 @@ namespace sio
         void set_reconnect_attempts(unsigned attempts) {m_reconn_attempts = attempts;}
         void set_reconnect_delay(unsigned millis);
         void set_reconnect_delay_max(unsigned millis);
+        void on_log(const char* line);
 
         // listeners and event bindings. (see SYNTHESIS_SETTER below)
         virtual void set_open_listener(client::con_listener const& l) { m_open_listener = l; }
@@ -88,10 +89,25 @@ namespace sio
             m_reconnecting_listener = nullptr;
         }
 
-        void on_log(const char* line) {
-            m_client.get_alog().write(websocketpp::log::alevel::app, line);
+        void set_socket_open_listener(client::socket_listener const& l) { m_socket_open_listener = l; }
+        void set_socket_close_listener(client::socket_listener const& l) { m_socket_close_listener = l; }
+
+        void clear_socket_listeners()
+        {
+            m_socket_open_listener = nullptr;
+            m_socket_close_listener = nullptr;
+        }
+
+        virtual void on_socket_closed(std::string const& nsp) {
+            if (m_socket_close_listener) m_socket_close_listener(nsp);
+        }
+        virtual void on_socket_opened(std::string const& nsp) {
+            if (m_socket_open_listener) m_socket_open_listener(nsp);
         }
     protected:
+        client::socket_listener m_socket_open_listener;
+        client::socket_listener m_socket_close_listener;
+
         client::con_listener m_open_listener;
         client::con_listener m_fail_listener;
         client::con_listener m_reconnecting_listener;
@@ -120,16 +136,16 @@ namespace sio
         
         
         //websocket callbacks
-				template<class client_type>
+        template<class client_type>
         void on_fail(client_type* client, connection_hdl con);
-				template<class client_type>
+        template<class client_type>
         void on_open(client_type* client, connection_hdl con);
-				template<class client_type>
+        template<class client_type>
         void on_close(client_type* client, connection_hdl con);
-				template<class client_type>
+        template<class client_type>
         void on_recv(client_type* client, connection_hdl con, typename client_type::message_ptr msg);
 
-        socket::ptr const& socket(string const& nsp);
+        socket::ptr create_socket(const std::string& nsp);
         //socketio callbacks
         void on_handshake(message::ptr const& message);
 

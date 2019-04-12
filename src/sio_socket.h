@@ -68,8 +68,11 @@ namespace sio
         std::string const& get_namespace() const;
 
         socket(handler* h, const std::string& n) :m_client(h), m_nsp(n) {}
-
         virtual void close() {}
+
+        int SetUserData(const char* key, const char* value);
+        const char* GetUserData(const char* key);
+        int ClearUserData();
     protected:
 
         friend class handler;
@@ -101,6 +104,7 @@ namespace sio
         event_listener get_bind_listener_locked(std::string const& event);
 
         error_listener m_error_listener;
+        std::map<std::string, std::string> m_user_data;
     private:
         //disable copy constructor and assign operator.
         socket(socket const&){}

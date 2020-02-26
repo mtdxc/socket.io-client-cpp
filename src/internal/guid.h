@@ -20,7 +20,7 @@ typedef struct _GUID
 #endif
 namespace XGUID
 {
-  GUID CreateGuid()
+  inline GUID CreateGuid()
   {
     GUID guid;
 #ifdef WIN32
@@ -30,7 +30,7 @@ namespace XGUID
 #endif
     return guid;
   }
-  std::string GuidToString(const GUID &guid)
+  inline std::string GuidToString(const GUID &guid)
   {
     char buf[64] = { 0 };
     snprintf(
@@ -44,7 +44,7 @@ namespace XGUID
       guid.Data4[6], guid.Data4[7]);
     return std::string(buf);
   }
-  std::string CreateGuidString()
+  inline std::string CreateGuidString()
   {
     return GuidToString(CreateGuid());
   }

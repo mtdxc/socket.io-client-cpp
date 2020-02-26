@@ -2,6 +2,7 @@
 //
 #include <iostream>
 #include "../../src/sio_server.h"
+#include "server.hpp"
 using namespace sio;
 server ws(false);
 int main()

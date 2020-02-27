@@ -255,7 +255,7 @@ namespace sio
         m_client.set_access_channels(alevel::connect | alevel::disconnect | alevel::app);
 #endif
         // Initialize the Asio transport policy
-        m_client.init_asio();
+        m_client.init_asio(&io_service_);
 
         using std::placeholders::_1;
         using std::placeholders::_2;
@@ -264,7 +264,7 @@ namespace sio
         m_client.set_fail_handler(std::bind(&client_impl::on_fail<client_type_no_tls>, this, &m_client, _1));
         m_client.set_message_handler(std::bind(&client_impl::on_recv<client_type_no_tls>, this, &m_client, _1, _2));
 #if SIO_TLS
-        client_tls.init_asio();
+        client_tls.init_asio(&io_service_);
         client_tls.set_open_handler(std::bind(&client_impl::on_open<client_type_tls>, this, &client_tls, _1));
         client_tls.set_close_handler(std::bind(&client_impl::on_close<client_type_tls>, this, &client_tls, _1));
         client_tls.set_fail_handler(std::bind(&client_impl::on_fail<client_type_tls>, this, &client_tls, _1));
@@ -369,14 +369,7 @@ namespace sio
     /*************************protected:*************************/
     asio::io_service& client_impl::get_io_service()
     {
-        if (m_ssl) {
-#if SIO_TLS
-            return client_tls.get_io_service();
-#endif
-        }
-        else {
-            return m_client.get_io_service();
-        }
+		return io_service_;
     }
 
     /*************************private:*************************/

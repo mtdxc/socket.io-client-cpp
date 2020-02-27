@@ -120,6 +120,7 @@ namespace sio
 
         asio::io_service& get_io_service();
     private:
+		websocketpp::lib::asio::io_service io_service_;
         void run_loop();
 
         void connect_impl();

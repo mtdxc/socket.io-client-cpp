@@ -9,6 +9,7 @@ typedef websocketpp::server<websocketpp::config::asio> server_type_no_tls;
 #include <websocketpp/config/asio.hpp>
 typedef websocketpp::server<websocketpp::config::asio_tls> server_type_tls;
 #endif
+using websocketpp::connection_hdl;
 
 namespace sio {
     class server_handler;
@@ -17,20 +18,20 @@ namespace sio {
     {
         typedef std::function<void(socket::ptr sock)> socket_listener;
         bool m_ssl;
+        websocketpp::lib::asio::io_service io_service_;
 		server_type_no_tls server_;
 #if SIO_TLS
         server_type_tls server_tls;
 #endif
         std::mutex mutex_;
-        std::map<void*, server_handler*> clients_;
+
+        std::map<connection_hdl, server_handler*, std::owner_less<connection_hdl>> clients_;
         std::map<std::string, std::list<socket::ptr> > rooms_;
         socket_listener socket_open_, socket_close_;
+        void on_ws_close(connection_hdl hdl);
         template<typename server_type>
-        void on_ws_close(server_type *server, websocketpp::connection_hdl hdl);
-        template<typename server_type>
-        void on_ws_msg(server_type *server, websocketpp::connection_hdl hdl, typename server_type::message_ptr msg);
-        template<typename server_type>
-        void on_ws_open(server_type *server, websocketpp::connection_hdl hdl);
+        void on_ws_msg(server_type *server, connection_hdl hdl, typename server_type::message_ptr msg);
+        void on_ws_open(connection_hdl hdl);
 
     public:
         server(bool ssl);

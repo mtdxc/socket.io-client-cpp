@@ -5,6 +5,7 @@
 #include "guid.h"
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
+using websocketpp::lib::bind;
 using namespace sio;
 server::server(bool ssl):m_ssl(ssl){
 }
@@ -44,14 +45,7 @@ void server::notify_socket(socket::ptr s, bool open) {
 
 asio::io_service& server::get_io_service()
 {
-    if (m_ssl) {
-#if SIO_TLS
-        return server_tls.get_io_service();
-#endif
-    }
-    else {
-        return server_.get_io_service();
-    }
+	return io_service_;
 }
 
 void server::start(int listenPort) {
@@ -63,22 +57,26 @@ void server::start(int listenPort) {
 #endif
 #if SIO_TLS
         if (m_ssl) {
-            server_tls.set_open_handler(websocketpp::lib::bind(&server::on_ws_open<server_type_tls>, this, &server_tls, ::_1));
-            server_tls.set_close_handler(websocketpp::lib::bind(&server::on_ws_close<server_type_tls>, this, &server_tls, ::_1));
-            server_tls.set_message_handler(websocketpp::lib::bind(&server::on_ws_msg<server_type_tls>, this, &server_tls, ::_1, ::_2));
+#ifndef DEBUG
+            server_tls.clear_access_channels(alevel::all);
+            server_tls.set_access_channels(alevel::connect | alevel::disconnect | alevel::app);
+#endif
+            server_tls.set_open_handler(bind(&server::on_ws_open, this, ::_1));
+            server_tls.set_close_handler(bind(&server::on_ws_close, this, ::_1));
+            server_tls.set_message_handler(bind(&server::on_ws_msg<server_type_tls>, this, &server_tls, ::_1, ::_2));
         }
         else
 #endif
         {
-            server_.set_open_handler(websocketpp::lib::bind(&server::on_ws_open<server_type_no_tls>, this, &server_, ::_1));
-            server_.set_close_handler(websocketpp::lib::bind(&server::on_ws_close<server_type_no_tls>, this, &server_, ::_1));
-            server_.set_message_handler(websocketpp::lib::bind(&server::on_ws_msg<server_type_no_tls>, this, &server_, ::_1, ::_2));
+            server_.set_open_handler(bind(&server::on_ws_open, this, ::_1));
+            server_.set_close_handler(bind(&server::on_ws_close, this, ::_1));
+            server_.set_message_handler(bind(&server::on_ws_msg<server_type_no_tls>, this, &server_, ::_1, ::_2));
         }
 
         log("listen on port %d, ssl %d", listenPort, m_ssl);
 #if SIO_TLS
         if (m_ssl) {
-            server_tls.init_asio();
+            server_tls.init_asio(&io_service_);
             server_tls.listen(listenPort);
             server_tls.start_accept();
             server_tls.run();
@@ -86,7 +84,7 @@ void server::start(int listenPort) {
         else
 #endif
         {
-            server_.init_asio();
+            server_.init_asio(&io_service_);
             server_.listen(listenPort);
             server_.start_accept();
             server_.run();
@@ -100,26 +98,21 @@ void server::start(int listenPort) {
     }
 }
 
-template<typename server_type>
-void server::on_ws_close(server_type *server, websocketpp::connection_hdl hdl)
+void server::on_ws_close(websocketpp::connection_hdl hdl)
 {
-    void* p = hdl.lock().get();
     //server_type::connection_ptr connection = server->get_con_from_hdl(hdl);
     std::unique_lock<std::mutex> l(mutex_);
-    if (clients_.count(p)) {
-        server_handler* h = clients_[p];
-        clients_.erase(p);
+    if (clients_.count(hdl)) {
+        server_handler* h = clients_[hdl];
+        clients_.erase(hdl);
         l.unlock();
         h->close();
     }
-    log("on_ws_close %p, %d clients remain", p, clients_.size());
+    log("on_ws_close %p, %d clients remain", hdl.lock().get(), clients_.size());
 }
 
-template<typename server_type>
-void server::on_ws_open(server_type *server, websocketpp::connection_hdl hdl)
+void server::on_ws_open(websocketpp::connection_hdl hdl)
 {
-    void* p = hdl.lock().get();
-
     // Send Handshake
     rapidjson::Document document;
     document.SetObject();
@@ -142,17 +135,17 @@ void server::on_ws_open(server_type *server, websocketpp::connection_hdl hdl)
     snprintf(buffer, sizeof(buffer), "%d%s", packet::frame_open, strbuf.GetString());
     std::string handshake(buffer);
     log("HandShake %s", handshake.c_str());
-    server->send(hdl, handshake, websocketpp::frame::opcode::TEXT);
+    send(hdl, handshake);
 
     // send connect nessage @see server_handler::on_connect
     snprintf(buffer, sizeof(buffer), "%d%d", packet::frame_message, packet::type_connect);
     std::string openFrame(buffer);
-    server->send(hdl, openFrame, websocketpp::frame::opcode::TEXT);
+    send(hdl, openFrame);
     server_handler* sh = new server_handler(sid, this, hdl);
     {
         std::lock_guard<std::mutex> l(mutex_);
-        clients_[p] = sh;
-        log("on_ws_open %p, %d clients", p, clients_.size());
+        clients_[hdl] = sh;
+        log("on_ws_open %p, %d clients", hdl.lock().get(), clients_.size());
     }
     socket::ptr s = sh->socket("");
     notify_socket(s, true);
@@ -161,13 +154,12 @@ void server::on_ws_open(server_type *server, websocketpp::connection_hdl hdl)
 template<typename server_type>
 void server::on_ws_msg(server_type *server, websocketpp::connection_hdl hdl, typename server_type::message_ptr msg)
 {
-    void* p = hdl.lock().get();
-    if (clients_.count(p)) {
+    if (clients_.count(hdl)) {
         // log("%p on_ws_msg %s", p, msg->get_payload().c_str());
-        clients_[p]->on_recv(false, msg->get_payload());
+        clients_[hdl]->on_recv(false, msg->get_payload());
     }
     else {
-        log("%p unknown msg %s", p, msg->get_payload().c_str());
+        log("unknown msg %s", msg->get_payload().c_str());
     }
 }
 
@@ -198,7 +190,7 @@ void server::close(websocketpp::connection_hdl hdl)
         server_tls.close(hdl, websocketpp::close::status::policy_violation, reason, ec);
 #endif
     }
-    clients_.erase(hdl.lock().get());
+    clients_.erase(hdl);
 }
 
 server_handler* server::get_session(const std::string& sid) {

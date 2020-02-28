@@ -70,10 +70,11 @@ namespace sio
         socket(handler* h, const std::string& n) :m_client(h), m_nsp(n) {}
         virtual void close() {}
 
-        int SetUserData(const char* key, const char* value);
-        const char* GetUserData(const char* key);
-        int ClearUserData();
+        int set_user_data(const char* key, void* value);
+        void* get_user_data(const char* key);
+        int clear_user_datas();
     protected:
+		std::map<std::string, void*> m_user_data;
 
         friend class handler;
         // sioÏûÏ¢´¥·¢
@@ -104,7 +105,6 @@ namespace sio
         event_listener get_bind_listener_locked(std::string const& event);
 
         error_listener m_error_listener;
-        std::map<std::string, std::string> m_user_data;
     private:
         //disable copy constructor and assign operator.
         socket(socket const&){}

@@ -98,7 +98,7 @@ namespace sio
         return m_nsp;
     }
 
-    int socket::SetUserData(const char* key, const char* value) {
+    int socket::set_user_data(const char* key, void* value) {
         int r = m_user_data.count(key);
         if (value) {
             m_user_data[key] = value;
@@ -109,15 +109,14 @@ namespace sio
         return r;
     }
 
-
-    const char* socket::GetUserData(const char* key) {
-        const char* ret = NULL;
+    void* socket::get_user_data(const char* key) {
+        void* ret = NULL;
         if (m_user_data.count(key))
-            ret = m_user_data[key].c_str();
+            ret = m_user_data[key];
         return ret;
     }
 
-    int socket::ClearUserData() {
+    int socket::clear_user_datas() {
         int r = m_user_data.size();
         m_user_data.clear();
         return r;
